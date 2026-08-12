@@ -1,1 +1,0 @@
-import {NextResponse} from 'next/server';import {createServerSupabaseClient} from '@/lib/supabase-server';export async function GET(){const s=await createServerSupabaseClient();const {data,error}=await s.from('products').select('*,brand:brands(name),category:categories(name)').order('created_at',{ascending:false});return NextResponse.json(data||[],{status:error?500:200})}
