@@ -32,7 +32,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // تحديث جلسة Supabase
   await supabase.auth.getUser()
 
   return response
@@ -40,13 +39,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * لا تشغل Middleware على:
-     * _next/static
-     * _next/image
-     * favicon
-     * الصور والملفات الثابتة
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
