@@ -1,0 +1,1 @@
+import {NextResponse} from "next/server";import {cookies} from "next/headers";import {prisma} from "@/lib/prisma";export async function POST(){const c=await cookies();const t=c.get("timea_session")?.value;if(t)await prisma.session.deleteMany({where:{token:t}});c.delete("timea_session");return NextResponse.json({ok:true})}
