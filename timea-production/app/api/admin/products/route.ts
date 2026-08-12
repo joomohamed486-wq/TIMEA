@@ -1,5 +1,0 @@
-import {NextResponse} from "next/server";import {prisma} from "@/lib/prisma";import {currentUser} from "@/lib/auth";
-async function guard(){const u=await currentUser();return u&&["SUPER_ADMIN","ADMIN","STAFF","INVENTORY_MANAGER"].includes(u.role)?u:null}
-export async function POST(r:Request){if(!await guard())return NextResponse.json({error:"Unauthorized"},{status:401});const b=await r.json();return NextResponse.json(await prisma.product.create({data:b}),{status:201})}
-export async function PATCH(r:Request){if(!await guard())return NextResponse.json({error:"Unauthorized"},{status:401});const b=await r.json();const {id,...data}=b;return NextResponse.json(await prisma.product.update({where:{id},data}))}
-export async function DELETE(r:Request){if(!await guard())return NextResponse.json({error:"Unauthorized"},{status:401});const {id}=await r.json();await prisma.product.delete({where:{id}});return NextResponse.json({ok:true})}
