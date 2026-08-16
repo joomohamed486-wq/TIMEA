@@ -50,10 +50,69 @@ create policy "own wishlist" on public.wishlist_items for all using(user_id=auth
 create policy "admin inventory read" on public.inventory_transactions for select using(public.is_admin());
 create policy "active coupons read" on public.coupons for select using(active=true); create policy "admin coupons write" on public.coupons for all using(public.is_admin()) with check(public.is_admin());
 
-create or replace function public.create_order(p_items jsonb,p_address jsonb,p_payment_method text default 'COD',p_discount numeric default 0,p_shipping numeric default 0) returns uuid language plpgsql security definer set search_path=public as $$
-declare uid uuid:=auth.uid(); oid uuid; item jsonb; pid uuid; qty int; old_stock int; p record; subtotal numeric:=0; total numeric;
-begin if uid is null then raise exception 'AUTH_REQUIRED'; end if; if jsonb_array_length(p_items)=0 then raise exception 'EMPTY_CART'; end if;
- for item in select * from jsonb_array_elements(p_items) loop pid:=(item->>'productId')::uuid; qty:=(item->>'quantity')::int; if qty<=0 then raise exception 'INVALID_QUANTITY'; end if; select * into p from public.products where id=pid for update; if not found then raise exception 'PRODUCT_NOT_FOUND'; end if; if p.stock<qty then raise exception 'INSUFFICIENT_STOCK'; end if; subtotal:=subtotal+(p.price*qty); end loop;
- total:=greatest(0,subtotal-coalesce(p_discount,0)+coalesce(p_shipping,0)); insert into public.orders(order_number,user_id,payment_method,subtotal,discount,shipping,tax,total,shipping_address) values('TM-'||to_char(now(),'YYYYMMDDHH24MISSMS'),uid,coalesce(p_payment_method,'COD'),subtotal,coalesce(p_discount,0),coalesce(p_shipping,0),0,total,p_address) returning id into oid;
- for item in select * from jsonb_array_elements(p_items) loop pid:=(item->>'productId')::uuid; qty:=(item->>'quantity')::int; select * into p from public.products where id=pid for update; old_stock:=p.stock; insert into public.order_items(order_id,product_id,name,sku,price,quantity) values(oid,p.id,p.name,p.sku,p.price,qty); update public.products set stock=stock-qty,updated_at=now() where id=p.id; insert into public.inventory_transactions(product_id,user_id,previous_qty,change,new_qty,reason) values(p.id,uid,old_stock,-qty,old_stock-qty,'ORDER'); end loop;
- insert into public.payments(order_id,provider,status,amount) values(oid,coalesce(p_payment_method,'COD'),'PENDING',total); return oid; end; $$;
+create or replace function public.create_order(p_items jsonb,p_address jsonb,p_payment_method text default 'COD',p_discount numeric default 0,p_shipping numeric default 0)
+returns uuid
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  uid uuid:=auth.uid();
+  oid uuid;
+  item jsonb;
+  pid uuid;
+  qty int;
+  old_stock int;
+  p record;
+  subtotal numeric:=0;
+  total numeric;
+  safe_discount numeric:=greatest(0,coalesce(p_discount,0));
+  safe_shipping numeric:=greatest(0,coalesce(p_shipping,0));
+begin
+  if uid is null then raise exception 'AUTH_REQUIRED'; end if;
+  if p_items is null or jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)=0 then raise exception 'EMPTY_CART'; end if;
+  if p_address is null or jsonb_typeof(p_address)<>'object' then raise exception 'INVALID_ADDRESS'; end if;
+  if coalesce(trim(p_address->>'city'),'')='' or coalesce(trim(p_address->>'address'),'')='' then raise exception 'INVALID_ADDRESS'; end if;
+
+  for item in select * from jsonb_array_elements(p_items) loop
+    begin
+      pid:=(item->>'productId')::uuid;
+      qty:=(item->>'quantity')::int;
+    exception when others then
+      raise exception 'INVALID_ITEM';
+    end;
+    if qty<=0 then raise exception 'INVALID_QUANTITY'; end if;
+    select * into p from public.products where id=pid for update;
+    if not found then raise exception 'PRODUCT_NOT_FOUND'; end if;
+    if p.stock<qty then raise exception 'INSUFFICIENT_STOCK'; end if;
+    subtotal:=subtotal+(p.price*qty);
+  end loop;
+
+  safe_discount:=least(safe_discount,subtotal);
+  total:=greatest(0,subtotal-safe_discount+safe_shipping);
+
+  insert into public.orders(order_number,user_id,payment_method,subtotal,discount,shipping,tax,total,shipping_address)
+  values(
+    'TM-'||to_char(now(),'YYYYMMDDHH24MISSMS')||'-'||upper(substr(replace(gen_random_uuid()::text,'-',''),1,6)),
+    uid,coalesce(p_payment_method,'COD'),subtotal,safe_discount,safe_shipping,0,total,p_address
+  ) returning id into oid;
+
+  for item in select * from jsonb_array_elements(p_items) loop
+    pid:=(item->>'productId')::uuid;
+    qty:=(item->>'quantity')::int;
+    select * into p from public.products where id=pid for update;
+    old_stock:=p.stock;
+    insert into public.order_items(order_id,product_id,name,sku,price,quantity)
+    values(oid,p.id,p.name,p.sku,p.price,qty);
+    update public.products set stock=stock-qty,updated_at=now() where id=p.id;
+    insert into public.inventory_transactions(product_id,user_id,previous_qty,change,new_qty,reason)
+    values(p.id,uid,old_stock,-qty,old_stock-qty,'ORDER');
+  end loop;
+
+  insert into public.payments(order_id,provider,status,amount)
+  values(oid,coalesce(p_payment_method,'COD'),'PENDING',total);
+
+  return oid;
+end;
+$$;
+
