@@ -1,20 +1,25 @@
-# TIMEA production deployment
+# TIMEA Admin Production Setup
 
-## Supabase
-1. Run `supabase/schema.sql` in the SQL Editor.
-2. Run `supabase/seed.sql`.
-3. Verify `select count(*) from public.products;` returns the seeded products.
-4. Verify Data API access for `products`, `brands`, and `categories`. The schema now includes explicit grants for `anon` and `authenticated`, in addition to RLS.
+## Vercel Environment Variables
 
-## Vercel
-Set these Environment Variables for Production, Preview and Development:
+Required:
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the Supabase Publishable key may be stored under this existing variable name)
+- `NEXT_PUBLIC_APP_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only; never expose it to the browser)
 
-Do not add Prisma, Neon, or a service-role key to the browser/client environment.
+Enable the variables for Production and Preview. Redeploy after changing any `NEXT_PUBLIC_*` variable.
 
-## Health check
-After deployment open `/api/health`. A healthy deployment returns JSON with `ok: true`. If it returns `ok: false`, the `stage` and `error` fields identify the failing layer.
+## Admin modules
 
-## Important
-There is intentionally no Next.js middleware in this project. Public catalog pages do not require authentication middleware.
+- `/admin` dashboard
+- `/admin/products` product CRUD
+- `/admin/orders` order listing, order details and status/payment updates
+- `/admin/categories` category CRUD
+- `/admin/brands` brand CRUD
+- `/admin/coupons` coupon CRUD
+- `/admin/reviews` moderation and deletion
+- `/admin/inventory` stock adjustment + inventory transaction logging
+- `/admin/users` account creation, roles, and deletion
+
+All admin API routes verify the signed-in user's profile role before using the server-only Supabase Admin client.
