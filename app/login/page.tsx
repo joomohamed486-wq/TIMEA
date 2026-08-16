@@ -1,6 +1,6 @@
 "use client";
 import {useState} from "react";
-import {useRouter,useSearchParams} from "next/navigation";
+import {useRouter} from "next/navigation";
 
 function safeNext(value:string|null){
   if(!value) return '/account';
@@ -13,13 +13,15 @@ export default function Login(){
   const[msg,setM]=useState("");
   const[busy,setBusy]=useState(false);
   const router=useRouter();
-  const params=useSearchParams();
   async function go(e:any){
     e.preventDefault(); setBusy(true); setM("");
     try{
       const x=await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(r)});
       const d=await x.json();
-      if(x.ok) router.replace(safeNext(params.get('next')));
+      if(x.ok) {
+        const next = new URLSearchParams(window.location.search).get('next');
+        router.replace(safeNext(next));
+      }
       else setM(d.error||'تعذر تسجيل الدخول');
     }catch{setM('تعذر الاتصال بالخادم');}
     finally{setBusy(false);}
