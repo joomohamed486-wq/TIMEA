@@ -6,7 +6,7 @@ const money=(n:number)=>new Intl.NumberFormat('ar-EG').format(n)+' ج.م';
 export default async function Home(){
   const s=await createServerSupabaseClient();
   const {data:products,error}=await s.from('products')
-    .select('*,brand:brands(name),category:categories(name)')
+    .select('*')
     .order('created_at',{ascending:false}).limit(8);
 
   if(error) console.error('[TIMEA] Home products query failed:', error);

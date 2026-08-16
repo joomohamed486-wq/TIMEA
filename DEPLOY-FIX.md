@@ -1,51 +1,20 @@
-# TIMEA — Vercel/Supabase deployment fix
+# TIMEA production deployment
 
-## 1. Supabase
+## Supabase
+1. Run `supabase/schema.sql` in the SQL Editor.
+2. Run `supabase/seed.sql`.
+3. Verify `select count(*) from public.products;` returns the seeded products.
+4. Verify Data API access for `products`, `brands`, and `categories`. The schema now includes explicit grants for `anon` and `authenticated`, in addition to RLS.
 
-Run `supabase/schema.sql` once in Supabase SQL Editor.
-Then run `supabase/seed.sql` once to insert the demo categories, brands and products.
-
-Verify:
-
-```sql
-select count(*) from public.products;
-select count(*) from public.brands;
-select count(*) from public.categories;
-```
-
-Expected demo products: 8.
-
-## 2. Vercel environment variables
-
-In Vercel -> Project -> Settings -> Environment Variables add:
-
+## Vercel
+Set these Environment Variables for Production, Preview and Development:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-Enable both for Production and Preview.
+Do not add Prisma, Neon, or a service-role key to the browser/client environment.
 
-After changing them, redeploy the project.
+## Health check
+After deployment open `/api/health`. A healthy deployment returns JSON with `ok: true`. If it returns `ok: false`, the `stage` and `error` fields identify the failing layer.
 
-## 3. Important architecture fix
-
-The project intentionally has **no Next.js Middleware**. TIMEA does not need global middleware for the current authentication flow. Authentication is handled in Route Handlers and Server Components through `@supabase/ssr`.
-
-This prevents `MIDDLEWARE_INVOCATION_FAILED` from taking down every route.
-
-## 4. Deployment
-
-The Vercel Root Directory must be the directory containing this `package.json`.
-
-Build command:
-
-```bash
-npm run build
-```
-
-Start command:
-
-```bash
-npm start
-```
-
-Do not add Prisma or Neon variables; this version uses Supabase directly.
+## Important
+There is intentionally no Next.js middleware in this project. Public catalog pages do not require authentication middleware.

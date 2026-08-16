@@ -13,7 +13,7 @@ export async function GET(){
     if(r.error)return NextResponse.json({error:r.error.message},{status:500});
     cart=r.data;
   }
-  const {data:items,error}=await s.from('cart_items').select('*,product:products(*)').eq('cart_id',cart.id);
+  const {data:items,error}=await s.from('cart_items').select('id,cart_id,product_id,quantity,product:products(id,sku,name,slug,price,stock,image)').eq('cart_id',cart.id);
   if(error)return NextResponse.json({error:error.message},{status:500});
   return NextResponse.json({id:cart.id,items:items||[]});
 }

@@ -116,3 +116,19 @@ begin
 end;
 $$;
 
+
+
+-- =====================================================
+-- TIMEA Data API permissions (required for Supabase 2026 defaults)
+-- Grants are separate from RLS. Keep both enabled.
+-- =====================================================
+grant usage on schema public to anon, authenticated, service_role;
+grant select on table public.products, public.brands, public.categories to anon, authenticated;
+grant select, insert, update, delete on table public.profiles to authenticated;
+grant select, insert, update, delete on table public.carts, public.cart_items, public.addresses, public.wishlist_items to authenticated;
+grant select, insert, update, delete on table public.orders, public.order_items, public.payments, public.reviews, public.coupon_usages to authenticated;
+grant select on table public.coupons, public.inventory_transactions to anon, authenticated;
+grant all on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to authenticated, service_role;
+grant execute on function public.create_order(jsonb,jsonb,text,numeric,numeric) to authenticated, service_role;
+grant execute on function public.handle_new_user() to service_role;
