@@ -355,7 +355,7 @@ export default function Checkout() {
                 <label>
                   <span>
                     المدينة
-                    <b>*</b>
+                    <b></b>
                   </span>
 
                   <input
@@ -374,7 +374,7 @@ export default function Checkout() {
                 <label className="full">
                   <span>
                     العنوان بالتفصيل
-                    <b>*</b>
+                    <b></b>
                   </span>
 
                   <textarea
