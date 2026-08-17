@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import HeroSlider from "@/components/HeroSlider";
+import HeroSlider from "@app/components/HeroSlider";
 
 const money = (n: number) =>
   new Intl.NumberFormat("ar-EG").format(n) + " ج.م";
