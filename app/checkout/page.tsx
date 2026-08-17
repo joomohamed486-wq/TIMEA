@@ -374,7 +374,6 @@ export default function Checkout() {
                 <label className="full">
                   <span>
                     العنوان بالتفصيل
-                    <b></b>
                   </span>
 
                   <textarea
