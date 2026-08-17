@@ -355,7 +355,6 @@ export default function Checkout() {
                 <label>
                   <span>
                     المدينة
-                    <b></b>
                   </span>
 
                   <input
