@@ -34,7 +34,7 @@ export default async function Home() {
     <main className="home-page" dir="rtl">
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
+      
 
         .home-page {
           --text: #171717;
